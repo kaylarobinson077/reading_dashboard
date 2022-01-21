@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 
-from streamlit_helpers import draw_weeks_to_finish_histogram
+from streamlit_helpers import draw_num_pages_histogram
 from process_data import get_processed_data
 
 st.title("Kayla's Reading Dashboard")
@@ -18,7 +18,7 @@ st.subheader("Raw data")
 st.write(data)
 
 # draw a histogram
-st.subheader("Time to finish each book")
+st.subheader("Number of pages in each book")
 
-weeks_to_finish_histogram = draw_weeks_to_finish_histogram(data)
-st.write(weeks_to_finish_histogram)
+num_pages_hist = draw_num_pages_histogram(data)
+st.write(num_pages_hist)

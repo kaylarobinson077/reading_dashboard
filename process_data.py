@@ -39,7 +39,8 @@ def rename_cols(df):
         "Title": "title",
         "Author": "author",
         "First Page": "first_page",
-        "Next Page": "last_page",
+        "Last Page": "last_page",
+        "Next Page": "next_page",
         "Progress": "progress",
         "Started On": "started_on",
         "Last Read On": "last_read_on",
@@ -58,6 +59,14 @@ def get_initial_columns():
     book_data = rename_cols(book_data)
     initial_columns = book_data.to_dict("series")
     return initial_columns
+
+def drop_bad_rows(df):
+
+    # negative number of pages
+    if "num_pages" in df.columns:
+        df.drop(df[df["num_pages"]<0].index, inplace=True)
+
+    return df
 
 @st.cache
 def get_processed_data():
@@ -78,4 +87,5 @@ def get_processed_data():
     ]
 
     feats = dr.execute(output_columns)
+    feats = drop_bad_rows(feats)
     return feats
