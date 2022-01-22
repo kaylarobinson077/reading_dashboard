@@ -13,7 +13,7 @@ class google_books:
 
     def query_single_book(self, title: str, author: str) -> dict:
         query_root = f"{GOOGLE_BOOKS_URL}volumes?q="
-        query = f"{query_root}intitle:{title}+inauthor:{author}&key={GOOGLE_API_KEY}"
+        query = f"{query_root}intitle:{title}+inauthor:{author}&maxResults=1&key={GOOGLE_API_KEY}"
         try:
             response = requests.get(query)
             response_dict = response.json()
@@ -24,7 +24,20 @@ class google_books:
             # whole program doesn't break?
             raise ResponseError
             
-        return self.__book_response_to_pandas(response_dict)
+        if not (response_dict.get("totalItems", 0) > 0):
+            # raise Warning(f"Bad response for totalItems")
+            return pd.Series([], dtype=object)
+
+        if len(response_dict.get("items", [])) == 0:
+            # raise Warning(f"Bad response, items empty")
+            return pd.Series([], dtype=object)
+
+        # assume that google searched well, and first match is the best match
+        item = response_dict["items"][0]
+        # volumeInfo contains the most interesting info that we care about
+        item_info = item["volumeInfo"]
+
+        return item_info
 
     def query_multiple_books(self, df_to_query: pd.DataFrame, title_col: str="title", author_col: str="author") -> pd.DataFrame:
         """
@@ -45,28 +58,43 @@ class google_books:
             information returned from Google Books queries.
         """
         # TODO make author optional?
+        
 
         assert title_col in df_to_query.columns
         assert author_col in df_to_query.columns
 
         # df_plus_googlebooks = df_to_query.copy()
-        df_googlebooks = pd.DataFrame()
-
+        # df_googlebooks = pd.DataFrame()
+        googlebooks_responses = []
         for idx, row in df_to_query.iterrows():
+            # print(row[title_col])
             googlebook_info = self.query_single_book(row[title_col], row[author_col])
-            df_googlebooks = df_googlebooks.append(googlebook_info, ignore_index=True)
-        return pd.concat([df_to_query, df_googlebooks], axis=1)
+            googlebooks_responses += [googlebook_info]
+            # add columns to df if any new fields
+        #     new_cols = [x for x in googlebook_info.keys() if x not in list(df_googlebooks.columns)]
+        #     if new_cols and list(df_googlebooks.columns):
+        #         df_googlebooks = df_googlebooks.reindex(columns = list(df_googlebooks.columns) + new_cols)
+        #     elif new_cols:
+        #         df_googlebooks = df_googlebooks.reindex(columns = new_cols)
+
+        #     df_googlebooks = df_googlebooks.append(googlebook_info, ignore_index=True)
+        # print(df_googlebooks.head())
+            # df_googlebooks
+        df_googlebooks = pd.DataFrame.from_dict(googlebooks_responses)
+        return pd.concat([df_to_query, df_googlebooks], axis=1, ignore_index=True)
 
     def __book_response_to_pandas(self, response_dict: dict) -> pd.Series:
         # TODO handle the case where response_dict doesn't return any matches
         # TODO move this validation to separate function?
         # check that the response matches our expectations
-        assert response_dict["kind"] == "books#volumes"
-        if response_dict.get("totalItems", 0) > 0:
-            return pd.Series()
+        # assert response_dict["kind"] == "books#volumes"
+        if not (response_dict.get("totalItems", 0) > 0):
+            # raise Warning(f"Bad response for totalItems")
+            return pd.Series([], dtype=object)
 
-        if len(response_dict.get("items", []) == 0:
-            return pd.Series()
+        if len(response_dict.get("items", [])) == 0:
+            # raise Warning(f"Bad response, items empty")
+            return pd.Series([], dtype=object)
 
         # assume that google searched well, and first match is the best match
         item = response_dict["items"][0]
@@ -80,6 +108,7 @@ class google_books:
         # prefix each index with `googlebooks` for uniqueness against other data sources
         # which contain the same information
         series_info.rename("googlebooks_{}".format, inplace=True)
+        # print(series_info)
         return series_info
 
 if __name__=="__main__":

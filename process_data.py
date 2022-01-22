@@ -2,7 +2,7 @@ import pandas as pd
 import importlib
 from pathlib import Path
 from hamilton import driver
-from reading_dashboard.google_books import google_books
+from google_books import google_books
 
 
 DATA_LOC = Path("data")
@@ -89,12 +89,14 @@ def get_processed_data():
         "is_finished",
         "time_to_finish",
         "time_read",
+        "genre"
     ]
 
     feats = dr.execute(output_columns)
     feats = drop_bad_rows(feats)
 
-    print(feats.head())
+    print(feats["genre"].unique)
+
     return feats
 
 if __name__=="__main__":

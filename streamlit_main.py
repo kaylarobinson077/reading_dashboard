@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
+# sample invocation:
+# run streamlit streamlit_main.py
 
 from streamlit_helpers import draw_num_pages_histogram
 from process_data import get_processed_data

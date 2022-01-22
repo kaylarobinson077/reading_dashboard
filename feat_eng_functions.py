@@ -21,4 +21,8 @@ def time_read(time_read: pd.Series) -> pd.Series:
     return pd.to_datetime(time_read)
 
 
-        
+def genre(googlebooks_categories: pd.Series) -> pd.Series:
+    genre = googlebooks_categories.apply(lambda x: x[0] if type(x) is list else "None")
+    genre = genre.apply(lambda x: x.title())
+    return genre
+
