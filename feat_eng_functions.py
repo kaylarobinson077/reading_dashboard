@@ -1,6 +1,4 @@
 import pandas as pd
-import os
-
 
 def num_pages(first_page: pd.Series, last_page: pd.Series) -> pd.Series:
     num_pages = last_page - first_page

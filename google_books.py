@@ -15,8 +15,11 @@ class google_books:
         query = f"{query_root}intitle:{title}+inauthor:{author}&maxResults=1&key={GOOGLE_API_KEY}"
         try:
             response = requests.get(query)
+            assert response.status_code == 200
             response_dict = response.json()
         except:
+            if response.status_code == 429:
+                raise RuntimeError("API said we exceeded hits for today :(")
             # TODO what is the specific type of error i should raise here?
             # TODO print more descriptive error message
             # TODO maybe give 'none' values for all attributes in this case, so that the
@@ -25,11 +28,13 @@ class google_books:
             
         if not (response_dict.get("totalItems", 0) > 0):
             # raise Warning(f"Bad response for totalItems")
-            return pd.Series([], dtype=object)
+            print("totalItems too small")
+            return {}
 
         if len(response_dict.get("items", [])) == 0:
             # raise Warning(f"Bad response, items empty")
-            return pd.Series([], dtype=object)
+            print("items is empty")
+            return {}
 
         # assume that google searched well, and first match is the best match
         item = response_dict["items"][0]
@@ -79,8 +84,9 @@ class google_books:
         #     df_googlebooks = df_googlebooks.append(googlebook_info, ignore_index=True)
         # print(df_googlebooks.head())
             # df_googlebooks
-        df_googlebooks = pd.DataFrame.from_dict(googlebooks_responses)
-        return pd.concat([df_to_query, df_googlebooks], axis=1, ignore_index=True)
+        df_googlebooks = pd.DataFrame.from_dict(googlebooks_responses).add_prefix("googlebooks_")
+        return pd.concat([df_to_query, df_googlebooks], axis=1)
+        series_info.rename("googlebooks_{}".format, inplace=True).add_
 
     def __book_response_to_pandas(self, response_dict: dict) -> pd.Series:
         # TODO handle the case where response_dict doesn't return any matches

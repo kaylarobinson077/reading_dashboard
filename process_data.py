@@ -63,7 +63,10 @@ def get_initial_columns():
 
     leio_data = load_leio_data()
     leio_googlebooks = append_googlebooks_data(leio_data)
+    # print(leio_googlebooks.head())
+    print(leio_googlebooks.columns)
     initial_columns = leio_googlebooks.to_dict("series")
+    # initial_columns = leio_data.to_dict("series")
     return initial_columns
 
 def drop_bad_rows(df):
@@ -95,7 +98,6 @@ def get_processed_data():
     feats = dr.execute(output_columns)
     feats = drop_bad_rows(feats)
 
-    print(feats["genre"].unique)
 
     return feats
 

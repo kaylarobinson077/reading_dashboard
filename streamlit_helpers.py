@@ -20,7 +20,7 @@ GENRE_COLORMAP = {
     "Self-Help": "deepskyblue",
     "Social Science": "forestgreen",
     "Sports & Recreation": "gold",
-    None: "grey",
+    "None": "grey",
 }
 
 # inspo: https://github.com/tanul-mathur/music-through-the-ages/blob/40ce59fc8575dbed8e12e3c13752c4ac9aad9382/Helper.py#L10
@@ -45,7 +45,7 @@ def draw_num_pages_histogram(df):
                                     x = df_[df_["genre"]==label_name]["num_pages"],
                                     name = label_name,
                                     hovertemplate='# Pages: %{x}, # Books: %{y}',
-                                    marker_color = GENRE_COLORMAP.get(label_name, "grey"),
+                                    marker_color = GENRE_COLORMAP.get(label_name, "lightgrey"),
                                     ))
 
     fig.update_layout(barmode="stack")
