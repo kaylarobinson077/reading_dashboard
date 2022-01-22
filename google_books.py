@@ -1,4 +1,3 @@
-from this import d
 from xmlrpc.client import ResponseError
 import requests
 import os

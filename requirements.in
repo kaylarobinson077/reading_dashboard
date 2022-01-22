@@ -4,3 +4,4 @@ pathlib
 sf-hamilton
 streamlit
 plotly
+requests
