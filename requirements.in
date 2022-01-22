@@ -2,3 +2,5 @@ pandas
 datetime
 pathlib
 sf-hamilton
+streamlit
+plotly

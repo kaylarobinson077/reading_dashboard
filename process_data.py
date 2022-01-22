@@ -2,7 +2,7 @@ import pandas as pd
 import importlib
 from pathlib import Path
 from hamilton import driver
-import streamlit as st
+
 
 DATA_LOC = Path("data")
 
@@ -68,12 +68,10 @@ def drop_bad_rows(df):
 
     return df
 
-@st.cache
 def get_processed_data():
 
     # load and clean data
     initial_columns = get_initial_columns()
-    print(initial_columns)
 
     module_name = "feature_functions"
     module = importlib.import_module(module_name)
@@ -83,9 +81,16 @@ def get_processed_data():
         "title",
         "num_pages",
         "is_finished",
-        "days_to_finish"
+        "time_to_finish",
+        "time_read",
+        "genre"
     ]
 
     feats = dr.execute(output_columns)
     feats = drop_bad_rows(feats)
+
+    print(feats.head())
     return feats
+
+if __name__=="__main__":
+    get_processed_data()
