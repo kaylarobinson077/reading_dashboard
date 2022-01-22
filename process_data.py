@@ -2,6 +2,7 @@ import pandas as pd
 import importlib
 from pathlib import Path
 from hamilton import driver
+from reading_dashboard.google_books import google_books
 
 
 DATA_LOC = Path("data")
@@ -29,12 +30,17 @@ From external sources
 - average rating
 """
 
-def load_book_data():
+def load_leio_data():
     book_data_loc = DATA_LOC / "leio_data.csv"
-    book_data = pd.read_csv(book_data_loc)
-    return book_data
+    leio_data = pd.read_csv(book_data_loc)
+    return rename_leio_cols(leio_data)
 
-def rename_cols(df):
+def append_googlebooks_data(df):
+    gb = google_books()
+    return gb.query_multiple_books(df)
+
+
+def rename_leio_cols(df):
     mapping = {
         "Title": "title",
         "Author": "author",
@@ -55,9 +61,9 @@ def rename_cols(df):
 
 def get_initial_columns():
 
-    book_data = load_book_data()
-    book_data = rename_cols(book_data)
-    initial_columns = book_data.to_dict("series")
+    leio_data = load_leio_data()
+    leio_googlebooks = append_googlebooks_data(leio_data)
+    initial_columns = leio_googlebooks.to_dict("series")
     return initial_columns
 
 def drop_bad_rows(df):
@@ -73,7 +79,7 @@ def get_processed_data():
     # load and clean data
     initial_columns = get_initial_columns()
 
-    module_name = "feature_functions"
+    module_name = "feat_eng_functions"
     module = importlib.import_module(module_name)
     dr = driver.Driver(initial_columns, module)
 
@@ -83,7 +89,6 @@ def get_processed_data():
         "is_finished",
         "time_to_finish",
         "time_read",
-        "genre"
     ]
 
     feats = dr.execute(output_columns)
