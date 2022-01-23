@@ -28,19 +28,10 @@ GENRE_COLORMAP = {
 def draw_num_pages_histogram(df):
 
     fig = go.Figure()
-
     df_ = df[["num_pages", "genre", "title"]]
-    # df_["is_finished"].replace({True: "Finished", False: "Not Finished"}, inplace=True)
-
-    # color_dict = {"Finished": "lightgreen", "Not Finished": "lightpink"}
-
-    #plot params
     labels = df_["genre"].unique()
-    print(labels)
 
     for label_name in labels:
-        print(label_name)
-        print(GENRE_COLORMAP.get(label_name, "grey"))
         fig.add_trace(go.Histogram( 
                                     x = df_[df_["genre"]==label_name]["num_pages"],
                                     name = label_name,
