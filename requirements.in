@@ -1,3 +1,5 @@
+# NOTE Hamilton only supports python 3.6 and 3.7
+
 pandas
 datetime
 pathlib
@@ -5,3 +7,4 @@ sf-hamilton
 streamlit
 plotly
 requests
+sqlalchemy
