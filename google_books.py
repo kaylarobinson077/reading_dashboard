@@ -3,13 +3,99 @@ import requests
 import os
 import pandas as pd
 
+from reading_dashboard.postgres import postgres_to_pandas, append_to_postgres
+
 GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/"
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
-class google_books:
+
+class GoogleBooks:
     def __init__(self):
+        self.postgres = GoogleBooksPostgres()
+        self.api = GoogleBooksApi()
+
+    def get(self, books: list[dict]) -> pd.DataFrame:
+        """
+        Get book information from cached data if possible, and the Google Books API for
+        new books not found in the cached dataset.
+
+        If new books are queried, their info is appended to the data cache.
+
+        Parameters
+        ----------
+        books : list[dict]
+            List of books to query, where each book to query is a dict with keys for the
+            title and author
+
+        Returns
+        -------
+        book_info : pd.DataFrame
+            Google Books information for the input books list
+        """
         pass
 
+    def _get_cached(self, books: list[dict]) -> (pd.DataFrame, list[dict]):
+        """
+        Pull cached book info for any books in the list that we've seen before.
+
+        Parameters
+        ----------
+        books : list[dict]
+            List of books to query, where each book to query is a dict with keys for the
+            title and author
+
+        Returns
+        -------
+        cached_book_info : pd.DataFrame
+            Matching books from the input list that were found in the cached database
+        books_not_found : list[dict]
+            Books from the input list that were not found in the cached database
+        """
+        # get cached books
+        df_cached = self.postgres.get_cached_books()
+
+        # limit to requested books, matching on title
+        cached_book_info = df_cached[
+            df_cached["title"].isin([x["title"] for x in books])
+        ]
+
+        # check the books that weren't found in the cache
+        books_not_found = [
+            book for book in books if book["title"] not in cached_book_info["title"]
+        ]
+
+        return cached_book_info, books_not_found
+
+    def _get_new(self, books: list[dict]) -> pd.DataFrame:
+        """
+        For new books not found in the cache, get their info from the Google Books API
+        and add the book's information to the cached database.
+
+        Parameters
+        ----------
+        books : list[dict]
+            List of books to query, where each book to query is a dict with keys for the
+            title and author
+
+        Returns
+        -------
+        queried_book_info : pd.DataFrame
+            Info for the books from the input list returned by the Google Books API
+        """
+        queried_book_info = self.api.query_multiple_books(books)
+        append_to_postgres(queried_book_info, "google_books")
+        return queried_book_info
+
+
+class GoogleBooksPostgres:
+    def get_cached_books() -> pd.DataFrame:
+        return postgres_to_pandas("google_books")
+
+    def cache_book(row):
+        append_to_postgres(row, "google_books")
+
+
+class GoogleBooksApi:
     def query_single_book(self, title: str, author: str) -> dict:
         query_root = f"{GOOGLE_BOOKS_URL}volumes?q="
         query = f"{query_root}intitle:{title}+inauthor:{author}&maxResults=1&key={GOOGLE_API_KEY}"
@@ -25,7 +111,7 @@ class google_books:
             # TODO maybe give 'none' values for all attributes in this case, so that the
             # whole program doesn't break?
             raise ResponseError
-            
+
         if not (response_dict.get("totalItems", 0) > 0):
             # raise Warning(f"Bad response for totalItems")
             print("totalItems too small")
@@ -43,7 +129,12 @@ class google_books:
 
         return item_info
 
-    def query_multiple_books(self, df_to_query: pd.DataFrame, title_col: str="title", author_col: str="author") -> pd.DataFrame:
+    def query_multiple_books(
+        self,
+        df_to_query: pd.DataFrame,
+        title_col: str = "title",
+        author_col: str = "author",
+    ) -> pd.DataFrame:
         """
         Inputs
         ------
@@ -62,7 +153,6 @@ class google_books:
             information returned from Google Books queries.
         """
         # TODO make author optional?
-        
 
         assert title_col in df_to_query.columns
         assert author_col in df_to_query.columns
@@ -83,10 +173,12 @@ class google_books:
 
         #     df_googlebooks = df_googlebooks.append(googlebook_info, ignore_index=True)
         # print(df_googlebooks.head())
-            # df_googlebooks
-        df_googlebooks = pd.DataFrame.from_dict(googlebooks_responses).add_prefix("googlebooks_")
+        # df_googlebooks
+        df_googlebooks = pd.DataFrame.from_dict(googlebooks_responses).add_prefix(
+            "googlebooks_"
+        )
         return pd.concat([df_to_query, df_googlebooks], axis=1)
-        series_info.rename("googlebooks_{}".format, inplace=True).add_
+        # series_info.rename("googlebooks_{}".format, inplace=True).add_
 
     def __book_response_to_pandas(self, response_dict: dict) -> pd.Series:
         # TODO handle the case where response_dict doesn't return any matches
@@ -116,7 +208,13 @@ class google_books:
         # print(series_info)
         return series_info
 
-if __name__=="__main__":
-    df = pd.DataFrame({"title": ["To Kill a Mockingbird", "Where the Red Fern Grows"], "author": ["Harper Lee", "Wilson Rawls"]})
-    df_ = google_books().query_multiple_books(df)
+
+if __name__ == "__main__":
+    df = pd.DataFrame(
+        {
+            "title": ["To Kill a Mockingbird", "Where the Red Fern Grows"],
+            "author": ["Harper Lee", "Wilson Rawls"],
+        }
+    )
+    df_ = GoogleBooksApi().query_multiple_books(df)
     print(df_.head())
